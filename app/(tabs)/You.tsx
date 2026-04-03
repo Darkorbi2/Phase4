@@ -1,36 +1,21 @@
 import StatRow from '@/components/StatRow';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import type { TimeFilter } from '@/hooks/usePlayStats';
+import { usePlayStats } from '@/hooks/usePlayStats';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as MediaLibrary from 'expo-media-library';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type TimeFilter = 'Week' | 'Month' | 'Year' | 'All Time';
-
-// just a placeholder for now until the library is done
-const MOCK_STATS = {
-	week: { songs: 47, hours: 3.2 },
-	month: { songs: 184, hours: 13.8 },
-	year: { songs: 1240, hours: 96.4 },
-	allTime: { songs: 2345, hours: 187.5 }
-};
-
 const TIME_FILTERS: TimeFilter[] = ['Week', 'Month', 'Year', 'All Time'];
-
-const filterKey: Record<TimeFilter, keyof typeof MOCK_STATS> = {
-	Week: 'week',
-	Month: 'month',
-	Year: 'year',
-	'All Time': 'allTime'
-};
 
 export default function You() {
 	const scheme = useColorScheme() ?? 'dark';
 	const c = Colors[scheme];
 	const [activeFilter, setActiveFilter] = useState<TimeFilter>('Month');
-	const stats = MOCK_STATS[filterKey[activeFilter]];
+	const { stats } = usePlayStats(activeFilter);
 	const [songCount, setSongCount] = useState<number | null>(null);
 
 	useEffect(() => {
@@ -79,12 +64,12 @@ export default function You() {
 
 					<View style={styles.overviewRow}>
 						<View style={styles.overviewItem}>
-							<Text style={[styles.overviewNumber, { color: c.text }]}>{stats.songs.toLocaleString()}</Text>
+							<Text style={[styles.overviewNumber, { color: c.text }]}>{stats.songsPlayed.toLocaleString()}</Text>
 							<Text style={[styles.overviewLabel, { color: c.muted }]}>songs played</Text>
 						</View>
 						<View style={[styles.overviewDivider, { backgroundColor: c.divider }]} />
 						<View style={styles.overviewItem}>
-							<Text style={[styles.overviewNumber, { color: c.text }]}>{stats.hours.toFixed(1)}h</Text>
+							<Text style={[styles.overviewNumber, { color: c.text }]}>{stats.hoursListened.toFixed(1)}h</Text>
 							<Text style={[styles.overviewLabel, { color: c.muted }]}>listening time</Text>
 						</View>
 					</View>
@@ -99,12 +84,12 @@ export default function You() {
 						</View>
 						<Text style={[styles.topPickType, { color: c.muted }]}>MOST PLAYED SONG</Text>
 						<Text style={[styles.topPickTitle, { color: c.text }]} numberOfLines={2}>
-							Nothing Compares
+							{stats.mostPlayedSong?.title ?? '-'}
 						</Text>
-						<Text style={[styles.topPickSub, { color: c.muted }]}>The Weeknd</Text>
+						<Text style={[styles.topPickSub, { color: c.muted }]}>{stats.mostPlayedSong?.artist ?? 'No plays yet'}</Text>
 						<View style={styles.topPickCountRow}>
 							<Ionicons name='play-circle' size={13} color={c.accent} />
-							<Text style={[styles.topPickCount, { color: c.accent }]}> 84 plays</Text>
+							<Text style={[styles.topPickCount, { color: c.accent }]}>{stats.mostPlayedSong ? ` ${stats.mostPlayedSong.count} plays` : ''}</Text>
 						</View>
 					</View>
 
@@ -114,12 +99,12 @@ export default function You() {
 						</View>
 						<Text style={[styles.topPickType, { color: c.muted }]}>TOP ARTIST</Text>
 						<Text style={[styles.topPickTitle, { color: c.text }]} numberOfLines={2}>
-							The Weeknd
+							{stats.topArtist?.name ?? '-'}
 						</Text>
-						<Text style={[styles.topPickSub, { color: c.muted }]}>312 plays total</Text>
+						<Text style={[styles.topPickSub, { color: c.muted }]}>{stats.topArtist ? `${stats.topArtist.plays} plays total` : 'No plays yet'}</Text>
 						<View style={styles.topPickCountRow}>
 							<Ionicons name='musical-notes' size={13} color={c.accent2} />
-							<Text style={[styles.topPickCount, { color: c.accent2 }]}> 18 songs</Text>
+							<Text style={[styles.topPickCount, { color: c.accent2 }]}>{stats.topArtist ? ` ${stats.topArtist.songCount} songs` : ''}</Text>
 						</View>
 					</View>
 				</View>
@@ -127,13 +112,41 @@ export default function You() {
 				{/* Activity Stats */}
 				<Text style={[styles.sectionTitle, { color: c.text }]}>Activity</Text>
 				<View style={[styles.card, { backgroundColor: c.card }]}>
-					<StatRow icon='repeat' iconColor={c.accent} label='Most Replayed' value='Save Your Tears' sub='replayed 31 times' c={c} />
+					<StatRow
+						icon='repeat'
+						iconColor={c.accent}
+						label='Most Replayed'
+						value={stats.mostPlayedSong?.title ?? '-'}
+						sub={stats.mostPlayedSong ? `replayed ${stats.mostPlayedSong.count} times` : 'No plays yet'}
+						c={c}
+					/>
 					<View style={[styles.statDivider, { backgroundColor: c.divider }]} />
-					<StatRow icon='calendar' iconColor={c.accent2} label='Most Active Day' value='Saturday' sub='avg 12 songs on Saturday' c={c} />
+					<StatRow
+						icon='calendar'
+						iconColor={c.accent2}
+						label='Most Active Day'
+						value={stats.mostActiveDay?.day ?? '-'}
+						sub={stats.mostActiveDay ? `avg ${stats.mostActiveDay.avgSongs} songs on ${stats.mostActiveDay.day}` : 'No plays yet'}
+						c={c}
+					/>
 					<View style={[styles.statDivider, { backgroundColor: c.divider }]} />
-					<StatRow icon='flame' iconColor='#FF6B6B' label='Longest Streak' value='14 days' sub='Jan 5 - Jan 18, 2026' c={c} />
+					<StatRow
+						icon='flame'
+						iconColor='#FF6B6B'
+						label='Longest Streak'
+						value={stats.longestStreak ? `${stats.longestStreak.days} days` : '-'}
+						sub={stats.longestStreak ? `${stats.longestStreak.start} - ${stats.longestStreak.end}` : 'No plays yet'}
+						c={c}
+					/>
 					<View style={[styles.statDivider, { backgroundColor: c.divider }]} />
-					<StatRow icon='time' iconColor={c.muted} label='Last Played' value='Starboy' sub='2 hours ago · The Weeknd' c={c} />
+					<StatRow
+						icon='time'
+						iconColor={c.muted}
+						label='Last Played'
+						value={stats.lastPlayed?.title ?? '-'}
+						sub={stats.lastPlayed ? `${stats.lastPlayed.timeAgo} · ${stats.lastPlayed.artist}` : 'Nothing played yet'}
+						c={c}
+					/>
 				</View>
 
 				<View style={styles.bottomPad} />

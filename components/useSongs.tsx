@@ -2,6 +2,7 @@ import { Audio } from "expo-av";
 import * as MediaLibrary from "expo-media-library";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
+import { logPlay } from "@/utils/playHistory";
 
 export type Song = {
   id: string;
@@ -62,6 +63,14 @@ export function useSongs() {
 
       setSound(newSound);
       setCurrentSong(song);
+
+      await logPlay({
+        songId: song.id,
+        title: song.title ?? song.filename,
+        artist: song.artist ?? 'Unknown Artist',
+        duration: song.duration ?? 0,
+        playedAt: Date.now(),
+      });
     } catch (error) {
       console.error("Error playing song:", error);
     }
