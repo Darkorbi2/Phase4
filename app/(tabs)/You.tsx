@@ -36,8 +36,7 @@ export default function You() {
 	useEffect(() => {
 		async function loadSongCount() {
 			const { status } = await MediaLibrary.getPermissionsAsync();
-			const granted = status === 'granted' ? true : (await MediaLibrary.requestPermissionsAsync()).status === 'granted';
-			if (!granted) return;
+			if (status !== 'granted') return;
 
 			const result = await MediaLibrary.getAssetsAsync({ mediaType: ['audio'], first: 1 });
 			setSongCount(result.totalCount);
