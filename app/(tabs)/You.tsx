@@ -3,7 +3,8 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import * as MediaLibrary from 'expo-media-library';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type TimeFilter = 'Week' | 'Month' | 'Year' | 'All Time';
@@ -30,6 +31,19 @@ export default function You() {
 	const c = Colors[scheme];
 	const [activeFilter, setActiveFilter] = useState<TimeFilter>('Month');
 	const stats = MOCK_STATS[filterKey[activeFilter]];
+	const [songCount, setSongCount] = useState<number | null>(null);
+
+	useEffect(() => {
+		async function loadSongCount() {
+			const { status } = await MediaLibrary.getPermissionsAsync();
+			const granted = status === 'granted' ? true : (await MediaLibrary.requestPermissionsAsync()).status === 'granted';
+			if (!granted) return;
+
+			const result = await MediaLibrary.getAssetsAsync({ mediaType: ['audio'], first: 1 });
+			setSongCount(result.totalCount);
+		}
+		loadSongCount();
+	}, []);
 
 	return (
 		<LinearGradient colors={['#0A1923', 'rgba(0,0,0,0.53)']} locations={[0.54, 0.87]} style={[styles.screen, { backgroundColor: c.background }]}>
@@ -38,7 +52,9 @@ export default function You() {
 				<View style={styles.header}>
 					<View>
 						<Text style={[styles.pageTitle, { color: c.text }]}>YOU</Text>
-						<Text style={[styles.pageSub, { color: c.muted }]}>2,345 songs in your library</Text>
+						<Text style={[styles.pageSub, { color: c.muted }]}>
+							{songCount !== null ? `${songCount.toLocaleString()} songs in your library` : 'Loading library...'}
+						</Text>
 					</View>
 					<View style={[styles.avatar, { backgroundColor: c.card }]}>
 						<Ionicons name='person' size={28} color={c.accent} />
@@ -185,7 +201,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 		paddingVertical: 7,
 		borderRadius: 8,
-		alignItems: 'center',
+		alignItems: 'center'
 	},
 	filterText: {
 		fontSize: 12,
