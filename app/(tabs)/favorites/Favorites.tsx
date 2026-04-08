@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useRef, useState } from 'react';
+import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const STORAGE_KEY = 'favorites_storage';
+import { loadFavorites, toggleFavorite } from '@/lib/favorites';
 
 type Song = {
 	id: string;
@@ -16,17 +16,37 @@ type Song = {
 export default function Favorites() {
 	const [favorites, setFavorites] = useState<Song[]>([]);
 
-	useEffect(() => {
-		loadFavorites();
-	}, []);
+	// Per-song animation storage
+	const scales = useRef<{ [key: string]: Animated.Value }>({}).current;
 
-	const loadFavorites = async () => {
-		try {
-			const saved = await AsyncStorage.getItem(STORAGE_KEY);
-			if (saved) setFavorites(JSON.parse(saved));
-		} catch (err) {
-			console.log('Error loading favorites', err);
+	const getScale = (songId: string) => {
+		if (!scales[songId]) {
+			scales[songId] = new Animated.Value(1);
 		}
+		return scales[songId];
+	};
+
+	const animateHeart = (songId: string) => {
+		const scale = getScale(songId);
+		Animated.sequence([
+			Animated.timing(scale, { toValue: 1.3, duration: 120, useNativeDriver: true }),
+			Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true })
+		]).start();
+	};
+
+	// Reload favorites every time screen becomes active
+	useFocusEffect(
+		useCallback(() => {
+			loadFavorites().then(setFavorites);
+		}, [])
+	);
+
+	const handleToggleFavorite = async (song: Song) => {
+		animateHeart(song.id);
+
+		// NEW: toggleFavorite returns updated list
+		const updated = await toggleFavorite(song);
+		setFavorites(updated);
 	};
 
 	return (
@@ -56,6 +76,12 @@ export default function Favorites() {
 								<Text style={styles.songTitle}>{song.title}</Text>
 								<Text style={styles.songMeta}>{song.artist}</Text>
 							</View>
+
+							<TouchableOpacity onPress={() => handleToggleFavorite(song)}>
+								<Animated.View style={{ transform: [{ scale: getScale(song.id) }] }}>
+									<Ionicons name='heart' size={20} color='#FF4D4D' style={{ marginRight: 12 }} />
+								</Animated.View>
+							</TouchableOpacity>
 
 							<Text style={styles.duration}>{song.duration}</Text>
 						</View>
