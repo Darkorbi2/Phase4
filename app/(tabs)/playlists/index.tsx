@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
+//import { useSongs } from '@/components/useSongs'; //replace Song Type with this
 type Song = {
 	id: string;
 	title: string;
@@ -143,59 +144,59 @@ export default function Playlists() {
 					</TouchableOpacity>
 				</View>
 
-			{/* ADD BUTTON */}
-			<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
-				<TouchableOpacity style={styles.addCard} onPress={openAddModal}>
-					<View style={styles.addThumb}>
-						<Ionicons name='add-circle-outline' size={18} color='#8B8B8B' />
-					</View>
-					<Text style={styles.addText}>Add Playlist</Text>
-				</TouchableOpacity>
-
-				{/* PLAYLIST LIST */}
-				{playlists.map((playlist) => (
-					<View key={playlist.id} style={styles.playlistCard}>
-						<TouchableOpacity
-							style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}
-							onPress={() => {
-								if (editMode) openEditModal(playlist);
-								else router.push(`/playlists/${playlist.id}`);
-							}}
-						>
-							<View style={[styles.cover, { backgroundColor: playlist.accent }]} />
-
-							<View style={{ flex: 1 }}>
-								<Text style={styles.playlistTitle}>{playlist.title}</Text>
-								<Text style={styles.meta}>
-									{playlist.artist} • {playlist.songs} songs • {playlist.year}
-								</Text>
-							</View>
-						</TouchableOpacity>
-
-						{/* RIGHT ICONS */}
-						<View style={styles.rightIcons}>
-							{editMode ? (
-								<>
-									<TouchableOpacity onPress={() => openEditModal(playlist)}>
-										<Ionicons name='create-outline' size={20} color='#8FA0B2' />
-									</TouchableOpacity>
-
-									<TouchableOpacity onPress={() => deletePlaylist(playlist.id)}>
-										<Ionicons name='trash-outline' size={20} color='#FF4D4D' />
-									</TouchableOpacity>
-								</>
-							) : (
-								<Ionicons name='chevron-forward' size={18} color='#8FA0B2' />
-							)}
+				{/* ADD BUTTON */}
+				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
+					<TouchableOpacity style={styles.addCard} onPress={openAddModal}>
+						<View style={styles.addThumb}>
+							<Ionicons name='add-circle-outline' size={18} color='#8B8B8B' />
 						</View>
-					</View>
-				))}
-			</ScrollView>
+						<Text style={styles.addText}>Add Playlist</Text>
+					</TouchableOpacity>
 
-			{/* EDIT MODE BUTTON */}
-			<TouchableOpacity style={styles.editButton} onPress={() => setEditMode(!editMode)}>
-				<Text style={styles.editButtonText}>{editMode ? 'DONE' : 'EDIT PLAYLISTS'}</Text>
-			</TouchableOpacity>
+					{/* PLAYLIST LIST */}
+					{playlists.map((playlist) => (
+						<View key={playlist.id} style={styles.playlistCard}>
+							<TouchableOpacity
+								style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}
+								onPress={() => {
+									if (editMode) openEditModal(playlist);
+									else router.push(`/playlists/${playlist.id}`);
+								}}
+							>
+								<View style={[styles.cover, { backgroundColor: playlist.accent }]} />
+
+								<View style={{ flex: 1 }}>
+									<Text style={styles.playlistTitle}>{playlist.title}</Text>
+									<Text style={styles.meta}>
+										{playlist.artist} • {playlist.songs} songs • {playlist.year}
+									</Text>
+								</View>
+							</TouchableOpacity>
+
+							{/* RIGHT ICONS */}
+							<View style={styles.rightIcons}>
+								{editMode ? (
+									<>
+										<TouchableOpacity onPress={() => openEditModal(playlist)}>
+											<Ionicons name='create-outline' size={20} color='#8FA0B2' />
+										</TouchableOpacity>
+
+										<TouchableOpacity onPress={() => deletePlaylist(playlist.id)}>
+											<Ionicons name='trash-outline' size={20} color='#FF4D4D' />
+										</TouchableOpacity>
+									</>
+								) : (
+									<Ionicons name='chevron-forward' size={18} color='#8FA0B2' />
+								)}
+							</View>
+						</View>
+					))}
+				</ScrollView>
+
+				{/* EDIT MODE BUTTON */}
+				<TouchableOpacity style={styles.editButton} onPress={() => setEditMode(!editMode)}>
+					<Text style={styles.editButtonText}>{editMode ? 'DONE' : 'EDIT PLAYLISTS'}</Text>
+				</TouchableOpacity>
 			</View>
 
 			{/* MODAL */}
