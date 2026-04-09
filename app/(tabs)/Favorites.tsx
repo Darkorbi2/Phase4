@@ -1,14 +1,16 @@
+import { useSongs } from '@/components/useSongs';
+import { modifyFavorites } from '@/lib/favorites';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-
-import { modifyFavorites } from '@/lib/favorites';
 
 export default function FavoritesScreen() {
 	const { favorites, handleToggleFavorite, getScale } = modifyFavorites();
 	const { width, height } = useWindowDimensions();
 	const isSmall = width < 380;
 	const [search, setSearch] = useState('');
+
+	const { playSong, pauseSong, currentSong } = useSongs();
 
 	const filtered = favorites.filter(
 		(s) => (s.title ?? '').toLowerCase().includes(search.toLowerCase()) || (s.artist ?? '').toLowerCase().includes(search.toLowerCase())
@@ -59,7 +61,11 @@ export default function FavoritesScreen() {
 						<Text style={styles.emptyText}>{search ? 'No results found.' : 'No favorite songs yet.'}</Text>
 					) : (
 						filtered.map((song, index) => (
-							<TouchableOpacity key={song.id} style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}>
+							<TouchableOpacity
+								key={song.id}
+								style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}
+								onPress={() => playSong(song)} // Play song when row is pressed
+							>
 								<Text style={styles.index}>{index + 1}</Text>
 								<View style={[styles.artwork, { backgroundColor: song.accent }]} />
 								<View style={styles.songInfo}>
@@ -72,6 +78,7 @@ export default function FavoritesScreen() {
 										<Ionicons name='heart' size={14} color='#FF5CB8' />
 									</Animated.View>
 								</TouchableOpacity>
+								{currentSong?.id === song.id && <Text style={{ color: '#5ED4FF', marginLeft: 8 }}>▶ Playing</Text>}
 							</TouchableOpacity>
 						))
 					)}
