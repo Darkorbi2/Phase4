@@ -1,7 +1,7 @@
 import { HapticTab } from '@/components/haptic-tab';
-import MiniPlayer from '@/components/MiniPlayer';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { PlayerProvider } from '@/hooks/usePlayer';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
@@ -31,69 +31,69 @@ export default function TabLayout() {
 	const c = Colors[colorScheme];
 
 	return (
-		<View style={{ flex: 1 }}>
-		<Tabs
-			screenOptions={{
-				tabBarActiveTintColor: c.accent,
-				tabBarInactiveTintColor: c.tabIconDefault,
-				tabBarStyle: {
-					backgroundColor: colorScheme === 'dark' ? c.filterBg : c.card,
-					borderTopWidth: 0,
-					elevation: 0,
-					height: 64,
-					paddingTop: 4,
-					position: 'absolute',
-					marginHorizontal: 16,
-					marginBottom: 24,
-					borderRadius: 20
-				},
-				tabBarLabelStyle: {
-					fontWeight: '700',
-					fontSize: 12.5,
-					lineHeight: 16
-				},
-				headerShown: false,
-				tabBarButton: HapticTab
-			}}
-		>
-			<Tabs.Screen
-				name='index'
-				options={{
-					title: 'Home',
-					tabBarIcon: ({ color, focused }) => <TabIcon name='home' color={color} focused={focused} indicatorColor={c.accent} />
+		<PlayerProvider>
+			<Tabs
+				screenOptions={{
+					tabBarActiveTintColor: c.accent,
+					tabBarInactiveTintColor: c.tabIconDefault,
+					tabBarStyle: {
+						backgroundColor: colorScheme === 'dark' ? c.filterBg : c.card,
+						borderTopWidth: 0,
+						elevation: 0,
+						height: 64,
+						paddingTop: 4,
+						position: 'absolute',
+						marginHorizontal: 16,
+						marginBottom: 24,
+						borderRadius: 20
+					},
+					tabBarLabelStyle: {
+						fontWeight: '700',
+						fontSize: 12.5,
+						lineHeight: 16
+					},
+					headerShown: false,
+					tabBarButton: HapticTab
 				}}
-			/>
+			>
+				<Tabs.Screen
+					name='index'
+					options={{
+						title: 'Home',
+						tabBarIcon: ({ color, focused }) => <TabIcon name='home' color={color} focused={focused} indicatorColor={c.accent} />
+					}}
+				/>
 
-			<Tabs.Screen
-				name='Favorites'
-				options={{
-					title: 'Favourites',
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name='heart-outline' color={focused ? c.accent2 : color} focused={focused} indicatorColor={c.accent2} />
-					)
-				}}
-			/>
+				<Tabs.Screen
+					name='Favorites'
+					options={{
+						title: 'Favourites',
+						tabBarIcon: ({ color, focused }) => (
+							<TabIcon name='heart-outline' color={focused ? c.accent2 : color} focused={focused} indicatorColor={c.accent2} />
+						)
+					}}
+				/>
 
-			<Tabs.Screen
-				name='You'
-				options={{
-					title: 'You',
-					tabBarIcon: ({ color, focused }) => <TabIcon name='person-outline' color={color} focused={focused} indicatorColor={c.accent} />
-				}}
-			/>
+				<Tabs.Screen
+					name='You'
+					options={{
+						title: 'You',
+						tabBarIcon: ({ color, focused }) => <TabIcon name='person-outline' color={color} focused={focused} indicatorColor={c.accent} />
+					}}
+				/>
 
-			<Tabs.Screen
-				name='playlists/index'
-				options={{
-					title: 'Playlists',
-					tabBarIcon: ({ color, focused }) => <TabIcon name='musical-notes-outline' color={color} focused={focused} indicatorColor={c.accent} />
-				}}
-			/>
+				<Tabs.Screen
+					name='playlists/index'
+					options={{
+						title: 'Playlists',
+						tabBarIcon: ({ color, focused }) => <TabIcon name='musical-notes-outline' color={color} focused={focused} indicatorColor={c.accent} />
+					}}
+				/>
 
-			{/* Hide nested routes from tab bar */}
-			<Tabs.Screen name='playlists/[id]' options={{ href: null }} />
-		</Tabs>
-		<MiniPlayer />
-		</View>
+				{/* Hide from tab bar */}
+				<Tabs.Screen name='playlists/[id]' options={{ href: null }} />
+				<Tabs.Screen name='currentSong' options={{ href: null }} />
+			</Tabs>
+		</PlayerProvider>
 	);
 }
