@@ -1,180 +1,182 @@
-import { Audio } from "expo-av";
-import * as MediaLibrary from "expo-media-library";
-import { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { logPlay } from '@/utils/playHistory';
+import { Audio } from 'expo-av';
+import * as MediaLibrary from 'expo-media-library';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 export type Song = {
-  id: string;
-  filename: string;
-  uri: string;
-  duration?: number;
-  title?: string;
-  artist?: string;
-  album?: string;
-  artwork?: string | null;
+	id: string;
+	filename: string;
+	uri: string;
+	duration?: number;
+	title?: string;
+	artist?: string;
+	album?: string;
+	artwork?: string | null;
 };
 
 export function useSongs() {
-  // State
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [permissionStatus, setPermissionStatus] = useState("checking...");
-  const [error, setError] = useState<string | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+	// State
+	const [songs, setSongs] = useState<Song[]>([]);
+	const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [permissionStatus, setPermissionStatus] = useState('checking...');
+	const [error, setError] = useState<string | null>(null);
+	const [sound, setSound] = useState<Audio.Sound | null>(null);
+	const [currentSong, setCurrentSong] = useState<Song | null>(null);
 
-  // Effects
-  useEffect(() => {
-    requestPermission();
-  }, []);
+	// Effects
+	useEffect(() => {
+		requestPermission();
+	}, []);
 
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+	useEffect(() => {
+		return sound
+			? () => {
+					sound.unloadAsync();
+				}
+			: undefined;
+	}, [sound]);
 
-  // Functions
-  const addSong = (newSong: Song) => {
-    setSongs((prevItems) => [...prevItems, newSong]);
-  };
+	// Functions
+	const addSong = (newSong: Song) => {
+		setSongs((prevItems) => [...prevItems, newSong]);
+	};
 
-  const removeSong = (removedSong: Song) => {
-    setSongs((prevItems) =>
-      prevItems.filter((item) => item.id !== removedSong.id),
-    );
-  };
+	const removeSong = (removedSong: Song) => {
+		setSongs((prevItems) => prevItems.filter((item) => item.id !== removedSong.id));
+	};
 
-  const playSong = async (song: Song) => {
-    let uri = song.uri;
-    try {
-      if (sound) {
-        await sound.unloadAsync();
-      }
+	const playSong = async (song: Song) => {
+		let uri = song.uri;
+		try {
+			if (sound) {
+				await sound.unloadAsync();
+			}
 
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true },
-      );
+			const { sound: newSound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
 
-      setSound(newSound);
-      setCurrentSong(song);
-    } catch (error) {
-      console.error("Error playing song:", error);
-    }
-  };
+			setSound(newSound);
+			setCurrentSong(song);
 
-  const pauseSong = async () => {
-    try {
-      if (sound) {
-        await sound.unloadAsync();
-      }
+			await logPlay({
+				songId: song.id,
+				title: song.title ?? song.filename,
+				artist: song.artist ?? 'Unknown Artist',
+				duration: song.duration ?? 0,
+				playedAt: Date.now()
+			});
+		} catch (error) {
+			console.error('Error playing song:', error);
+		}
+	};
 
-      setCurrentSong(null);
-    } catch (error) {
-      console.error("Error pausing song:", error);
-    }
-  };
+	const pauseSong = async () => {
+		try {
+			if (sound) {
+				await sound.unloadAsync();
+			}
 
-  const requestPermission = async () => {
-    try {
-      setError(null);
+			setCurrentSong(null);
+		} catch (error) {
+			console.error('Error pausing song:', error);
+		}
+	};
 
-      const available = await MediaLibrary.isAvailableAsync();
-      if (!available) {
-        setHasPermission(false);
-        setPermissionStatus("unavailable");
-        setError("Media library is not available on this device.");
-        return;
-      }
+	const requestPermission = async () => {
+		try {
+			setError(null);
 
-      const existing = await MediaLibrary.getPermissionsAsync();
+			const available = await MediaLibrary.isAvailableAsync();
+			if (!available) {
+				setHasPermission(false);
+				setPermissionStatus('unavailable');
+				setError('Media library is not available on this device.');
+				return;
+			}
 
-      if (existing.status === "granted") {
-        setHasPermission(true);
-        setPermissionStatus(existing.status);
-        return;
-      }
+			const existing = await MediaLibrary.getPermissionsAsync();
 
-      const result =
-        Platform.OS === "android"
-          ? await MediaLibrary.requestPermissionsAsync(false, ["audio"])
-          : await MediaLibrary.requestPermissionsAsync();
+			if (existing.status === 'granted') {
+				setHasPermission(true);
+				setPermissionStatus(existing.status);
+				return;
+			}
 
-      setPermissionStatus(result.status);
-      setHasPermission(result.status === "granted");
+			const result =
+				Platform.OS === 'android' ? await MediaLibrary.requestPermissionsAsync(false, ['audio']) : await MediaLibrary.requestPermissionsAsync();
 
-      if (result.status !== "granted") {
-        setError("Permission was denied.");
-      }
-    } catch (err: any) {
-      console.error("Permission request failed:", err);
-      setHasPermission(false);
-      setPermissionStatus("error");
-      setError(err?.message ?? "Unknown error requesting permissions");
-    }
-  };
+			setPermissionStatus(result.status);
+			setHasPermission(result.status === 'granted');
 
-  const loadSongs = async () => {
-    if (!hasPermission) return;
+			if (result.status !== 'granted') {
+				setError('Permission was denied.');
+			}
+		} catch (err: any) {
+			console.error('Permission request failed:', err);
+			setHasPermission(false);
+			setPermissionStatus('error');
+			setError(err?.message ?? 'Unknown error requesting permissions');
+		}
+	};
 
-    try {
-      setLoading(true);
-      setError(null);
+	const loadSongs = async () => {
+		if (!hasPermission) return;
 
-      let allAssets: MediaLibrary.Asset[] = [];
-      let after: string | undefined = undefined;
-      let hasNextPage = true;
+		try {
+			setLoading(true);
+			setError(null);
 
-      while (hasNextPage) {
-        const media = await MediaLibrary.getAssetsAsync({
-          mediaType: ["audio"],
-          first: 100,
-          after,
-          sortBy: [["creationTime", false]],
-        });
+			let allAssets: MediaLibrary.Asset[] = [];
+			let after: string | undefined = undefined;
+			let hasNextPage = true;
 
-        allAssets = allAssets.concat(media.assets);
-        after = media.endCursor;
-        hasNextPage = media.hasNextPage;
-      }
+			while (hasNextPage) {
+				const media = await MediaLibrary.getAssetsAsync({
+					mediaType: ['audio'],
+					first: 100,
+					after,
+					sortBy: [['creationTime', false]]
+				});
 
-      const mappedSongs: Song[] = allAssets.map((asset) => ({
-        id: asset.id,
-        filename: asset.filename,
-        uri: asset.uri,
-        duration: asset.duration,
-        title: asset.filename.replace(/\.[^/.]+$/, ""),
-        artist: "Unknown Artist",
-        album: "Unknown Album",
-        artwork: null,
-      }));
+				allAssets = allAssets.concat(media.assets);
+				after = media.endCursor;
+				hasNextPage = media.hasNextPage;
+			}
 
-      setSongs(mappedSongs);
-    } catch (err: any) {
-      console.error("Failed to load songs:", err);
-      setError(err?.message ?? "Failed to load songs");
-    } finally {
-      setLoading(false);
-    }
-  };
+			const mappedSongs: Song[] = allAssets.map((asset) => ({
+				id: asset.id,
+				filename: asset.filename,
+				uri: asset.uri,
+				duration: asset.duration,
+				title: asset.filename.replace(/\.[^/.]+$/, ''),
+				artist: 'Unknown Artist',
+				album: 'Unknown Album',
+				artwork: null
+			}));
 
-  // Return
-  return {
-    songs,
-    hasPermission,
-    loading,
-    permissionStatus,
-    error,
-    currentSong,
-    requestPermission,
-    loadSongs,
-    addSong,
-    removeSong,
-    playSong,
-    pauseSong,
-  };
+			setSongs(mappedSongs);
+		} catch (err: any) {
+			console.error('Failed to load songs:', err);
+			setError(err?.message ?? 'Failed to load songs');
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Return
+	return {
+		songs,
+		hasPermission,
+		loading,
+		permissionStatus,
+		error,
+		currentSong,
+		requestPermission,
+		loadSongs,
+		addSong,
+		removeSong,
+		playSong,
+		pauseSong
+	};
 }

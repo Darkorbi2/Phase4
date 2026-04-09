@@ -1,4 +1,6 @@
 import { useSongs } from '@/components/useSongs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useEffect } from 'react';
 import { Button, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -10,6 +12,26 @@ export default function Home() {
 			loadSongs();
 		}
 	}, [hasPermission]);
+
+	// this is just for testing, it seeds some play history data so we can see stats in
+	// the "You" tab without having to play a bunch of songs first. Can be removed later.
+	async function seedTestData() {
+		const now = Date.now();
+		const day = 24 * 60 * 60 * 1000;
+
+		const testHistory = [
+			{ songId: '1', title: 'Blinding Lights', artist: 'The Weeknd', duration: 200, playedAt: now - 1 * day },
+			{ songId: '1', title: 'Blinding Lights', artist: 'The Weeknd', duration: 200, playedAt: now - 2 * day },
+			{ songId: '1', title: 'Blinding Lights', artist: 'The Weeknd', duration: 200, playedAt: now - 3 * day },
+			{ songId: '2', title: 'Starboy', artist: 'The Weeknd', duration: 230, playedAt: now - 4 * day },
+			{ songId: '3', title: 'Levitating', artist: 'Dua Lipa', duration: 204, playedAt: now - 5 * day },
+			{ songId: '3', title: 'Levitating', artist: 'Dua Lipa', duration: 204, playedAt: now - 6 * day },
+			{ songId: '4', title: 'Stay', artist: 'The Kid LAROI', duration: 141, playedAt: now - 7 * day }
+		];
+
+		await AsyncStorage.setItem('play_history', JSON.stringify(testHistory));
+		console.log('Test data seeded!');
+	}
 
 	return (
 		<View style={styles.container}>
@@ -27,6 +49,7 @@ export default function Home() {
 			{hasPermission === true && (
 				<>
 					<Button title={'pause song'} onPress={pauseSong} />
+					<Button title='Seed Test Data' onPress={seedTestData} />
 
 					{error && <Text style={styles.error}>{error}</Text>}
 

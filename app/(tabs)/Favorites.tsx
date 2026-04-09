@@ -3,15 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
-import { loadFavorites, toggleFavorite } from '@/lib/favorites';
-
-type Song = {
-	id: string;
-	title: string;
-	artist: string;
-	duration: string;
-	accent: string;
-};
+import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 
 export default function FavoritesScreen() {
 	const { width, height } = useWindowDimensions();
@@ -51,65 +43,65 @@ export default function FavoritesScreen() {
 	return (
 		<SafeAreaView style={styles.container}>
 			<View style={styles.inner}>
-			<View style={styles.topRow}>
-				<View style={styles.searchBar}>
-					<Ionicons name='search' size={16} color='#7D8A97' />
-					<TextInput
-						placeholder='Search Favorites'
-						placeholderTextColor='#7D8A97'
-						style={styles.searchInput}
-						value={search}
-						onChangeText={setSearch}
-					/>
+				<View style={styles.topRow}>
+					<View style={styles.searchBar}>
+						<Ionicons name='search' size={16} color='#7D8A97' />
+						<TextInput
+							placeholder='Search Favorites'
+							placeholderTextColor='#7D8A97'
+							style={styles.searchInput}
+							value={search}
+							onChangeText={setSearch}
+						/>
+					</View>
+					<TouchableOpacity style={styles.menuBtn}>
+						<Ionicons name='ellipsis-horizontal' size={18} color='#fff' />
+					</TouchableOpacity>
 				</View>
-				<TouchableOpacity style={styles.menuBtn}>
-					<Ionicons name='ellipsis-horizontal' size={18} color='#fff' />
-				</TouchableOpacity>
-			</View>
 
-			<View style={styles.headerRow}>
-				<View style={styles.headerAccent} />
-				<Text style={[styles.headerTitle, { fontSize: isSmall ? 22 : 28 }]}>FAVORITES</Text>
-				<Text style={styles.songCount}>{favorites.length} songs</Text>
-			</View>
+				<View style={styles.headerRow}>
+					<View style={styles.headerAccent} />
+					<Text style={[styles.headerTitle, { fontSize: isSmall ? 22 : 28 }]}>FAVORITES</Text>
+					<Text style={styles.songCount}>{favorites.length} songs</Text>
+				</View>
 
-			<View style={styles.actionRow}>
-				<TouchableOpacity style={styles.primaryBtn}>
-					<Ionicons name='play' size={12} color='#5ED4FF' />
-					<Text style={styles.primaryText}>PLAY ALL</Text>
-				</TouchableOpacity>
-				<TouchableOpacity style={[styles.secondaryBtn, { paddingHorizontal: isSmall ? 8 : 12 }]}>
-					<Ionicons name='shuffle' size={12} color='#7D8A97' />
-					<Text style={styles.secondaryText}>SHUFFLE</Text>
-				</TouchableOpacity>
-				<TouchableOpacity style={[styles.secondaryBtn, { paddingHorizontal: isSmall ? 8 : 12 }]}>
-					<Ionicons name='repeat' size={12} color='#7D8A97' />
-					<Text style={styles.secondaryText}>REPEAT</Text>
-				</TouchableOpacity>
-			</View>
+				<View style={styles.actionRow}>
+					<TouchableOpacity style={styles.primaryBtn}>
+						<Ionicons name='play' size={12} color='#5ED4FF' />
+						<Text style={styles.primaryText}>PLAY ALL</Text>
+					</TouchableOpacity>
+					<TouchableOpacity style={[styles.secondaryBtn, { paddingHorizontal: isSmall ? 8 : 12 }]}>
+						<Ionicons name='shuffle' size={12} color='#7D8A97' />
+						<Text style={styles.secondaryText}>SHUFFLE</Text>
+					</TouchableOpacity>
+					<TouchableOpacity style={[styles.secondaryBtn, { paddingHorizontal: isSmall ? 8 : 12 }]}>
+						<Ionicons name='repeat' size={12} color='#7D8A97' />
+						<Text style={styles.secondaryText}>REPEAT</Text>
+					</TouchableOpacity>
+				</View>
 
-			<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: height * 0.18 }}>
-				{filtered.length === 0 ? (
-					<Text style={styles.emptyText}>{search ? 'No results found.' : 'No favorite songs yet.'}</Text>
-				) : (
-					filtered.map((song, index) => (
-						<TouchableOpacity key={song.id} style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}>
-							<Text style={styles.index}>{index + 1}</Text>
-							<View style={[styles.artwork, { backgroundColor: song.accent }]} />
-							<View style={styles.songInfo}>
-								<Text style={styles.songTitle}>{song.title}</Text>
-								<Text style={styles.artist}>{song.artist}</Text>
-							</View>
-							<Text style={styles.duration}>{song.duration}</Text>
-							<TouchableOpacity onPress={() => handleToggleFavorite(song)}>
-								<Animated.View style={{ transform: [{ scale: getScale(song.id) }] }}>
-									<Ionicons name='heart' size={14} color='#FF5CB8' />
-								</Animated.View>
+				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: height * 0.18 }}>
+					{filtered.length === 0 ? (
+						<Text style={styles.emptyText}>{search ? 'No results found.' : 'No favorite songs yet.'}</Text>
+					) : (
+						filtered.map((song, index) => (
+							<TouchableOpacity key={song.id} style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}>
+								<Text style={styles.index}>{index + 1}</Text>
+								<View style={[styles.artwork, { backgroundColor: song.accent }]} />
+								<View style={styles.songInfo}>
+									<Text style={styles.songTitle}>{song.title}</Text>
+									<Text style={styles.artist}>{song.artist}</Text>
+								</View>
+								<Text style={styles.duration}>{song.duration}</Text>
+								<TouchableOpacity onPress={() => handleToggleFavorite(song)}>
+									<Animated.View style={{ transform: [{ scale: getScale(song.id) }] }}>
+										<Ionicons name='heart' size={14} color='#FF5CB8' />
+									</Animated.View>
+								</TouchableOpacity>
 							</TouchableOpacity>
-						</TouchableOpacity>
-					))
-				)}
-			</ScrollView>
+						))
+					)}
+				</ScrollView>
 			</View>
 		</SafeAreaView>
 	);
