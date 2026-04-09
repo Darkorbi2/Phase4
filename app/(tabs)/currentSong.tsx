@@ -1,10 +1,13 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlayer } from '@/hooks/usePlayer';
-import { isFavorite, modifyFavorites } from '@/lib/favorites';
+import { isFavorite, loadFavorites, toggleFavorite } from '@/lib/favorites';
+import { Song } from '@/lib/useSongs';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 function formatMs(ms: number): string {
@@ -22,7 +25,19 @@ export default function CurrentSong() {
 	const { currentSong, isPlaying, isShuffle, repeatMode, positionMs, durationMs, togglePlay, skipNext, skipPrev, seekTo, toggleShuffle, toggleRepeat } =
 		usePlayer();
 
-	const { favorites, handleToggleFavorite } = modifyFavorites();
+	const [favorites, setFavorites] = useState<Song[]>([]);
+
+	useFocusEffect(
+		useCallback(() => {
+			loadFavorites().then(setFavorites);
+		}, [])
+	);
+
+	const handleToggleFavorite = async (song: Song) => {
+		const updated = await toggleFavorite(song);
+		setFavorites(updated);
+	};
+
 	const favorited = currentSong ? isFavorite(favorites, currentSong.id) : false;
 
 	const progress = durationMs > 0 ? positionMs / durationMs : 0;
@@ -111,7 +126,7 @@ export default function CurrentSong() {
 			<View style={styles.progressContainer}>
 				<View style={[styles.progressTrack, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
 					<View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: '#4FC3F7' }]} />
-					<View style={[styles.progressThumb, { left: `${Math.min(progress * 100, 97)}%`, backgroundColor: '#fff' }]} />
+					<View style={[styles.progressThumb, { left: `${Math.min(progress * 100, 97)}%` as any, backgroundColor: '#fff' }]} />
 				</View>
 				<View style={styles.timesRow}>
 					<Text style={[styles.timeText, { color: c.muted }]}>{formatMs(positionMs)}</Text>

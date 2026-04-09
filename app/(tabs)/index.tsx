@@ -1,8 +1,8 @@
-import { Song, useSongs } from '@/components/useSongs';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlayer } from '@/hooks/usePlayer';
 import { loadFavorites } from '@/lib/favorites';
+import { Song, useSongs } from '@/lib/useSongs';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,7 +15,7 @@ export default function Home() {
 	const c = Colors[scheme];
 	const router = useRouter();
 
-	const { songs, hasPermission, loading, loadSongs, requestPermission } = useSongs();
+	const { songs, hasPermission, loading, loadSongs, requestPermission, pickSongs } = useSongs();
 	const { setQueue, currentSong, isPlaying, togglePlay } = usePlayer();
 
 	const [search, setSearch] = useState('');
@@ -51,7 +51,7 @@ export default function Home() {
 		router.push('/(tabs)/currentSong');
 	};
 
-	if (!hasPermission) {
+	if (!hasPermission && Platform.OS === 'android') {
 		return (
 			<LinearGradient colors={['#0A1923', '#050D14']} style={styles.screen}>
 				<View style={styles.permissionState}>
@@ -90,6 +90,14 @@ export default function Home() {
 							</TouchableOpacity>
 						)}
 					</View>
+
+					{/* Import button — iOS only */}
+					{Platform.OS === 'ios' && (
+						<TouchableOpacity style={[styles.moreBtn, { backgroundColor: '#4FC3F7' }]} onPress={pickSongs}>
+							<Ionicons name='add' size={20} color='#fff' />
+						</TouchableOpacity>
+					)}
+
 					<TouchableOpacity style={[styles.moreBtn, { backgroundColor: '#1A2535' }]}>
 						<Ionicons name='ellipsis-horizontal' size={18} color={c.text} />
 					</TouchableOpacity>
@@ -142,9 +150,20 @@ export default function Home() {
 					</Text>
 				</View>
 
+				{/* iOS empty state */}
+				{Platform.OS === 'ios' && songs.length === 0 && !loading && (
+					<View style={styles.emptySearch}>
+						<Ionicons name='musical-notes-outline' size={48} color={c.muted} />
+						<Text style={[styles.emptyText, { color: c.muted }]}>No songs yet</Text>
+						<TouchableOpacity style={styles.permissionBtn} onPress={pickSongs}>
+							<Text style={styles.permissionBtnText}>Import Music</Text>
+						</TouchableOpacity>
+					</View>
+				)}
+
 				{loading ? (
 					<ActivityIndicator color='#4FC3F7' style={{ marginTop: 40 }} />
-				) : filtered.length === 0 ? (
+				) : filtered.length === 0 && search.trim() ? (
 					<View style={styles.emptySearch}>
 						<Ionicons name='search-outline' size={40} color={c.muted} />
 						<Text style={[styles.emptyText, { color: c.muted }]}>No songs found for "{search}"</Text>

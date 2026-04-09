@@ -2,13 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = 'favorites_storage';
 
-export type Song = {
-	id: string;
-	title: string;
-	artist: string;
-	duration: string;
-	accent: string;
-};
+import { Song } from '@/lib/useSongs';
 
 export const loadFavorites = async (): Promise<Song[]> => {
 	try {
