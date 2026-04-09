@@ -68,14 +68,6 @@ export default function TabLayout() {
 				}}
 			/>
 
-			{/* <Tabs.Screen
-				name='Discover'
-				options={{
-					title: 'Discover',
-					tabBarIcon: ({ color, focused }) => <TabIcon name='search-outline' color={color} focused={focused} indicatorColor={c.accent} />
-				}}
-			/> */}
-
 			<Tabs.Screen
 				name='You'
 				options={{
@@ -83,6 +75,17 @@ export default function TabLayout() {
 					tabBarIcon: ({ color, focused }) => <TabIcon name='person-outline' color={color} focused={focused} indicatorColor={c.accent} />
 				}}
 			/>
+
+			<Tabs.Screen
+				name='playlists/index'
+				options={{
+					title: 'Playlists',
+					tabBarIcon: ({ color, focused }) => <TabIcon name='musical-notes-outline' color={color} focused={focused} indicatorColor={c.accent} />
+				}}
+			/>
+
+			{/* Hide nested routes from tab bar */}
+			<Tabs.Screen name='playlists/[id]' options={{ href: null }} />
 		</Tabs>
 	);
 }
