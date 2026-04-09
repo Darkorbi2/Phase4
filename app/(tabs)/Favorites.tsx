@@ -3,8 +3,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlayer } from '@/lib/PlayerContext';
 import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
@@ -91,7 +91,10 @@ export default function FavoritesScreen() {
 							<TouchableOpacity
 								key={song.id}
 								style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}
-								onPress={() => { const full = songs.find((s) => s.id === song.id); if (full) playSong(full); }}
+								onPress={() => {
+									const full = songs.find((s) => s.id === song.id);
+									if (full) playSong(full);
+								}}
 							>
 								<Text style={styles.index}>{index + 1}</Text>
 								<View style={[styles.artwork, { backgroundColor: song.accent }]} />

@@ -24,9 +24,7 @@ export const toggleFavorite = async (song: Song): Promise<Song[]> => {
 	try {
 		const favorites = await loadFavorites();
 		const exists = favorites.some((s) => s.id === song.id);
-		const updated = exists
-			? favorites.filter((s) => s.id !== song.id)
-			: [...favorites, song];
+		const updated = exists ? favorites.filter((s) => s.id !== song.id) : [...favorites, song];
 		await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 		return updated;
 	} catch (err) {

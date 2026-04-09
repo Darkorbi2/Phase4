@@ -1,4 +1,4 @@
-import { useSongs } from '@/components/useSongs';
+import { useSongs } from '@/lib/useSongs';
 import React, { createContext, ReactNode, useContext } from 'react';
 
 // Created a player context to share song state and controls across the app.

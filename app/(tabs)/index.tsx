@@ -1,8 +1,8 @@
-import { Song } from '@/components/useSongs';
-import { usePlayer } from '@/lib/PlayerContext';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { isFavorite, Song as LibSong, loadFavorites, toggleFavorite } from '@/lib/favorites';
+import { usePlayer } from '@/lib/PlayerContext';
+import { Song } from '@/lib/useSongs';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,7 +12,20 @@ export default function Home() {
 	const scheme = useColorScheme() ?? 'dark';
 	const c = Colors[scheme];
 
-	const { songs = [], hasPermission, loading, error, currentSong, isPlaying, requestPermission, pickSongs, playSong, pauseSong, resumeSong, formatDuration } = usePlayer();
+	const {
+		songs = [],
+		hasPermission,
+		loading,
+		error,
+		currentSong,
+		isPlaying,
+		requestPermission,
+		pickSongs,
+		playSong,
+		pauseSong,
+		resumeSong,
+		formatDuration
+	} = usePlayer();
 
 	const [favorites, setFavorites] = useState<LibSong[]>([]);
 

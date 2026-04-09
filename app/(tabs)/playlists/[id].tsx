@@ -8,9 +8,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { Song } from '@/components/useSongs';
-import { isFavorite, loadFavorites, toggleFavorite } from '@/lib/favorites';
+import { isFavorite, loadFavorites, toggleFavorite, Song as FavSong } from '@/lib/favorites';
 import { usePlayer } from '@/lib/PlayerContext';
+import { Song } from '@/lib/useSongs';
 
 const STORAGE_KEY = 'playlists_storage_v2';
 
@@ -43,7 +43,7 @@ function PlaylistDetailsScreen({ playlistId }: { playlistId: string }) {
 	const { songs: allSongs } = usePlayer();
 
 	const [playlist, setPlaylist] = useState<Playlist | null>(null);
-	const [favorites, setFavorites] = useState<Song[]>([]);
+	const [favorites, setFavorites] = useState<FavSong[]>([]);
 	const [addModalVisible, setAddModalVisible] = useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
 
@@ -139,13 +139,21 @@ function PlaylistDetailsScreen({ playlistId }: { playlistId: string }) {
 					</TouchableOpacity>
 
 					<View style={{ flex: 1, marginHorizontal: 12 }}>
-						<Text style={[styles.pageTitle, { color: c.text }]} numberOfLines={1}>{playlist.title}</Text>
+						<Text style={[styles.pageTitle, { color: c.text }]} numberOfLines={1}>
+							{playlist.title}
+						</Text>
 						<Text style={[styles.pageSub, { color: c.muted }]}>
 							{playlist.artist} · {playlist.year} · {playlist.tracks.length} songs
 						</Text>
 					</View>
 
-					<TouchableOpacity style={[styles.iconBtn, { backgroundColor: c.accent }]} onPress={() => { setSearchQuery(''); setAddModalVisible(true); }}>
+					<TouchableOpacity
+						style={[styles.iconBtn, { backgroundColor: c.accent }]}
+						onPress={() => {
+							setSearchQuery('');
+							setAddModalVisible(true);
+						}}
+					>
 						<Ionicons name='add' size={20} color='#fff' />
 					</TouchableOpacity>
 				</View>
@@ -224,9 +232,7 @@ function PlaylistDetailsScreen({ playlistId }: { playlistId: string }) {
 						</View>
 
 						{allSongs.length === 0 ? (
-							<Text style={[styles.pageSub, { color: c.muted, textAlign: 'center', marginTop: 20 }]}>
-								No songs in your library yet.
-							</Text>
+							<Text style={[styles.pageSub, { color: c.muted, textAlign: 'center', marginTop: 20 }]}>No songs in your library yet.</Text>
 						) : (
 							<FlatList
 								data={filteredLibrary}
@@ -246,11 +252,7 @@ function PlaylistDetailsScreen({ playlistId }: { playlistId: string }) {
 													{item.artist ?? 'Unknown Artist'}
 												</Text>
 											</View>
-											<Ionicons
-												name={added ? 'checkmark-circle' : 'add-circle-outline'}
-												size={22}
-												color={added ? c.accent : c.muted}
-											/>
+											<Ionicons name={added ? 'checkmark-circle' : 'add-circle-outline'} size={22} color={added ? c.accent : c.muted} />
 										</TouchableOpacity>
 									);
 								}}
