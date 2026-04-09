@@ -5,6 +5,7 @@ import {
 	Montserrat_700Bold,
 	useFonts
 } from '@expo-google-fonts/montserrat';
+import { PlayerProvider } from '@/lib/PlayerContext';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -31,5 +32,9 @@ export default function RootLayout() {
 
 	if (!fontsLoaded) return null;
 
-	return <Stack screenOptions={{ headerShown: false }} />;
+	return (
+		<PlayerProvider>
+			<Stack screenOptions={{ headerShown: false }} />
+		</PlayerProvider>
+	);
 }

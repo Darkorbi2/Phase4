@@ -1,4 +1,5 @@
 import { HapticTab } from '@/components/haptic-tab';
+import MiniPlayer from '@/components/MiniPlayer';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,7 @@ export default function TabLayout() {
 	const c = Colors[colorScheme];
 
 	return (
+		<View style={{ flex: 1 }}>
 		<Tabs
 			screenOptions={{
 				tabBarActiveTintColor: c.accent,
@@ -91,5 +93,7 @@ export default function TabLayout() {
 			{/* Hide nested routes from tab bar */}
 			<Tabs.Screen name='playlists/[id]' options={{ href: null }} />
 		</Tabs>
+		<MiniPlayer />
+		</View>
 	);
 }

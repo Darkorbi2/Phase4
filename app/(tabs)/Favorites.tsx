@@ -1,23 +1,50 @@
-import { modifyFavorites } from '@/lib/favorites';
-import { useSongs } from '@/lib/useSongs';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePlayer } from '@/lib/PlayerContext';
+import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 export default function FavoritesScreen() {
-	const { favorites, handleToggleFavorite, getScale } = modifyFavorites();
+	const scheme = useColorScheme() ?? 'dark';
+	const c = Colors[scheme];
 	const { width, height } = useWindowDimensions();
 	const isSmall = width < 380;
+	const [favorites, setFavorites] = useState<Song[]>([]);
 	const [search, setSearch] = useState('');
 
-	const { playSong, pauseSong, currentSong } = useSongs();
+	const scales = useRef<{ [key: string]: Animated.Value }>({}).current;
+
+	const getScale = (songId: string) => {
+		if (!scales[songId]) scales[songId] = new Animated.Value(1);
+		return scales[songId];
+	};
+
+	useFocusEffect(
+		useCallback(() => {
+			loadFavorites().then(setFavorites);
+		}, [])
+	);
+
+	const handleToggleFavorite = async (song: Song) => {
+		Animated.sequence([
+			Animated.timing(getScale(song.id), { toValue: 1.3, duration: 120, useNativeDriver: true }),
+			Animated.timing(getScale(song.id), { toValue: 1, duration: 120, useNativeDriver: true })
+		]).start();
+		const updated = await toggleFavorite(song);
+		setFavorites(updated);
+	};
+	const { songs, playSong, currentSong } = usePlayer();
 
 	const filtered = favorites.filter(
 		(s) => (s.title ?? '').toLowerCase().includes(search.toLowerCase()) || (s.artist ?? '').toLowerCase().includes(search.toLowerCase())
 	);
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<LinearGradient colors={['#0A1923', 'rgba(0,0,0,0.53)']} locations={[0.54, 0.87]} style={[styles.container, { backgroundColor: c.background }]}>
 			<View style={styles.inner}>
 				<View style={styles.topRow}>
 					<View style={styles.searchBar}>
@@ -64,7 +91,10 @@ export default function FavoritesScreen() {
 							<TouchableOpacity
 								key={song.id}
 								style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}
-								onPress={() => playSong(song)} // Play song when row is pressed
+								onPress={() => {
+									const full = songs.find((s) => s.id === song.id);
+									if (full) playSong(full);
+								}}
 							>
 								<Text style={styles.index}>{index + 1}</Text>
 								<View style={[styles.artwork, { backgroundColor: song.accent }]} />
@@ -84,12 +114,12 @@ export default function FavoritesScreen() {
 					)}
 				</ScrollView>
 			</View>
-		</SafeAreaView>
+		</LinearGradient>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#07111B' },
+	container: { flex: 1 },
 	inner: { flex: 1, paddingHorizontal: 20, paddingTop: 60 },
 	topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
 	searchBar: {
