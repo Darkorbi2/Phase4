@@ -1,9 +1,9 @@
+import { usePlayer } from '@/lib/PlayerContext';
+import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-
-import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 
 export default function FavoritesScreen() {
 	const { width, height } = useWindowDimensions();
@@ -32,6 +32,7 @@ export default function FavoritesScreen() {
 		const updated = await toggleFavorite(song);
 		setFavorites(updated);
 	};
+	const { songs, playSong, currentSong } = usePlayer();
 
 	const filtered = favorites.filter(
 		(s) => (s.title ?? '').toLowerCase().includes(search.toLowerCase()) || (s.artist ?? '').toLowerCase().includes(search.toLowerCase())
@@ -82,7 +83,11 @@ export default function FavoritesScreen() {
 						<Text style={styles.emptyText}>{search ? 'No results found.' : 'No favorite songs yet.'}</Text>
 					) : (
 						filtered.map((song, index) => (
-							<TouchableOpacity key={song.id} style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}>
+							<TouchableOpacity
+								key={song.id}
+								style={[styles.songRow, index === 0 && styles.activeSongRow, { gap: isSmall ? 6 : 10 }]}
+								onPress={() => { const full = songs.find((s) => s.id === song.id); if (full) playSong(full); }}
+							>
 								<Text style={styles.index}>{index + 1}</Text>
 								<View style={[styles.artwork, { backgroundColor: song.accent }]} />
 								<View style={styles.songInfo}>
@@ -95,6 +100,7 @@ export default function FavoritesScreen() {
 										<Ionicons name='heart' size={14} color='#FF5CB8' />
 									</Animated.View>
 								</TouchableOpacity>
+								{currentSong?.id === song.id && <Text style={{ color: '#5ED4FF', marginLeft: 8 }}>▶ Playing</Text>}
 							</TouchableOpacity>
 						))
 					)}
