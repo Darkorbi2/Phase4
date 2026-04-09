@@ -1,4 +1,3 @@
-import { logPlay } from '@/utils/playHistory';
 import { Audio } from 'expo-av';
 import * as MediaLibrary from 'expo-media-library';
 import { useEffect, useState } from 'react';
@@ -13,6 +12,7 @@ export type Song = {
 	artist?: string;
 	album?: string;
 	artwork?: string | null;
+	accent: string;
 };
 
 export function useSongs() {
@@ -58,14 +58,6 @@ export function useSongs() {
 
 			setSound(newSound);
 			setCurrentSong(song);
-
-			await logPlay({
-				songId: song.id,
-				title: song.title ?? song.filename,
-				artist: song.artist ?? 'Unknown Artist',
-				duration: song.duration ?? 0,
-				playedAt: Date.now()
-			});
 		} catch (error) {
 			console.error('Error playing song:', error);
 		}
@@ -81,6 +73,13 @@ export function useSongs() {
 		} catch (error) {
 			console.error('Error pausing song:', error);
 		}
+	};
+
+	const formatDuration = (seconds: number) => {
+		const totalSeconds = Math.round(seconds); // round first
+		const mins = Math.floor(totalSeconds / 60);
+		const secs = totalSeconds % 60;
+		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	};
 
 	const requestPermission = async () => {
@@ -152,7 +151,8 @@ export function useSongs() {
 				title: asset.filename.replace(/\.[^/.]+$/, ''),
 				artist: 'Unknown Artist',
 				album: 'Unknown Album',
-				artwork: null
+				artwork: null,
+				accent: `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`
 			}));
 
 			setSongs(mappedSongs);
@@ -177,6 +177,7 @@ export function useSongs() {
 		addSong,
 		removeSong,
 		playSong,
-		pauseSong
+		pauseSong,
+		formatDuration
 	};
 }

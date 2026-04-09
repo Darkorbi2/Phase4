@@ -1,44 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
-import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
+import { modifyFavorites } from '@/lib/favorites';
 
 export default function FavoritesScreen() {
+	const { favorites, handleToggleFavorite, getScale } = modifyFavorites();
 	const { width, height } = useWindowDimensions();
 	const isSmall = width < 380;
-	const [favorites, setFavorites] = useState<Song[]>([]);
 	const [search, setSearch] = useState('');
 
-	const scales = useRef<{ [key: string]: Animated.Value }>({}).current;
-
-	const getScale = (songId: string) => {
-		if (!scales[songId]) scales[songId] = new Animated.Value(1);
-		return scales[songId];
-	};
-
-	const animateHeart = (songId: string) => {
-		const scale = getScale(songId);
-		Animated.sequence([
-			Animated.timing(scale, { toValue: 1.3, duration: 120, useNativeDriver: true }),
-			Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true })
-		]).start();
-	};
-
-	useFocusEffect(
-		useCallback(() => {
-			loadFavorites().then(setFavorites);
-		}, [])
+	const filtered = favorites.filter(
+		(s) => (s.title ?? '').toLowerCase().includes(search.toLowerCase()) || (s.artist ?? '').toLowerCase().includes(search.toLowerCase())
 	);
-
-	const handleToggleFavorite = async (song: Song) => {
-		animateHeart(song.id);
-		const updated = await toggleFavorite(song);
-		setFavorites(updated);
-	};
-
-	const filtered = favorites.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()) || s.artist.toLowerCase().includes(search.toLowerCase()));
 
 	return (
 		<SafeAreaView style={styles.container}>
