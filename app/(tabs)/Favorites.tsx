@@ -1,11 +1,16 @@
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlayer } from '@/lib/PlayerContext';
 import { loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useRef, useState } from 'react';
-import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 export default function FavoritesScreen() {
+	const scheme = useColorScheme() ?? 'dark';
+	const c = Colors[scheme];
 	const { width, height } = useWindowDimensions();
 	const isSmall = width < 380;
 	const [favorites, setFavorites] = useState<Song[]>([]);
@@ -39,7 +44,7 @@ export default function FavoritesScreen() {
 	);
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<LinearGradient colors={['#0A1923', 'rgba(0,0,0,0.53)']} locations={[0.54, 0.87]} style={[styles.container, { backgroundColor: c.background }]}>
 			<View style={styles.inner}>
 				<View style={styles.topRow}>
 					<View style={styles.searchBar}>
@@ -106,12 +111,12 @@ export default function FavoritesScreen() {
 					)}
 				</ScrollView>
 			</View>
-		</SafeAreaView>
+		</LinearGradient>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: '#07111B' },
+	container: { flex: 1 },
 	inner: { flex: 1, paddingHorizontal: 20, paddingTop: 60 },
 	topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
 	searchBar: {

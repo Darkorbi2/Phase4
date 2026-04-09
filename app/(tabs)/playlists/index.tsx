@@ -1,9 +1,13 @@
 import { playlists as starterPlaylists } from '@/app/data/playlists_storage';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 //import { useSongs } from '@/components/useSongs'; //replace Song Type with this
 type Song = {
@@ -29,6 +33,8 @@ const STORAGE_KEY = 'playlists_storage_v2';
 
 export default function Playlists() {
 	const router = useRouter();
+	const scheme = useColorScheme() ?? 'dark';
+	const c = Colors[scheme];
 
 	const [playlists, setPlaylists] = useState<Playlist[]>(starterPlaylists);
 	const [modalVisible, setModalVisible] = useState(false);
@@ -43,6 +49,12 @@ export default function Playlists() {
 	useEffect(() => {
 		loadPlaylists();
 	}, []);
+
+	useFocusEffect(
+		useCallback(() => {
+			loadPlaylists();
+		}, [])
+	);
 
 	useEffect(() => {
 		AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
@@ -129,7 +141,7 @@ export default function Playlists() {
 	};
 
 	return (
-		<SafeAreaView style={styles.container}>
+		<LinearGradient colors={['#0A1923', 'rgba(0,0,0,0.53)']} locations={[0.54, 0.87]} style={[styles.container, { backgroundColor: c.background }]}>
 			<View style={styles.inner}>
 				{/* HEADER */}
 				<View style={styles.header}>
@@ -168,7 +180,7 @@ export default function Playlists() {
 								<View style={{ flex: 1 }}>
 									<Text style={styles.playlistTitle}>{playlist.title}</Text>
 									<Text style={styles.meta}>
-										{playlist.artist} • {playlist.songs} songs • {playlist.year}
+										{playlist.artist} • {playlist.tracks.length} songs • {playlist.year}
 									</Text>
 								</View>
 							</TouchableOpacity>
@@ -245,14 +257,13 @@ export default function Playlists() {
 					</View>
 				</View>
 			</Modal>
-		</SafeAreaView>
+		</LinearGradient>
 	);
 }
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1,
-		backgroundColor: '#07111B'
+		flex: 1
 	},
 	inner: {
 		flex: 1,
