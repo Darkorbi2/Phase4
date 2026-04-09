@@ -5,8 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { Song } from '@/components/useSongs';
 import { isFavorite, loadFavorites, toggleFavorite } from '@/lib/favorites';
+import { Song } from '@/lib/useSongs';
 
 const STORAGE_KEY = 'playlists_storage_v2';
 

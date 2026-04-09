@@ -1,5 +1,5 @@
-import { Song, useSongs } from '@/components/useSongs';
 import { isFavorite, loadFavorites, toggleFavorite } from '@/lib/favorites';
+import { Song, useSongs } from '@/lib/useSongs';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Button, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';

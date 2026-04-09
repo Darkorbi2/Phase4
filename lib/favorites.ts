@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Song } from '@/components/useSongs';
+import { Song } from '@/lib/useSongs';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useRef, useState } from 'react';
 import { Animated } from 'react-native';

@@ -1,5 +1,5 @@
-import { useSongs } from '@/components/useSongs';
 import { modifyFavorites } from '@/lib/favorites';
+import { useSongs } from '@/lib/useSongs';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Animated, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
