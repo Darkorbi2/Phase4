@@ -90,7 +90,6 @@ export default function TabLayout() {
 
 			{/* Hide nested routes from tab bar */}
 			<Tabs.Screen name='playlists/[id]' options={{ href: null }} />
-			<Tabs.Screen name='Albums' options={{ href: null }} />
 		</Tabs>
 	);
 }
