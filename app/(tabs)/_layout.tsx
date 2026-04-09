@@ -35,11 +35,15 @@ export default function TabLayout() {
 				tabBarActiveTintColor: c.accent,
 				tabBarInactiveTintColor: c.tabIconDefault,
 				tabBarStyle: {
-					backgroundColor: colorScheme === 'dark' ? '#0D1117' : '#FFFFFF',
+					backgroundColor: colorScheme === 'dark' ? c.filterBg : c.card,
 					borderTopWidth: 0,
 					elevation: 0,
 					height: 64,
-					paddingTop: 4
+					paddingTop: 4,
+					position: 'absolute',
+					marginHorizontal: 16,
+					marginBottom: 24,
+					borderRadius: 20
 				},
 				tabBarLabelStyle: {
 					fontWeight: '700',
@@ -86,6 +90,7 @@ export default function TabLayout() {
 
 			{/* Hide nested routes from tab bar */}
 			<Tabs.Screen name='playlists/[id]' options={{ href: null }} />
+			<Tabs.Screen name='Albums' options={{ href: null }} />
 		</Tabs>
 	);
 }

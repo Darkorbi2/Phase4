@@ -7,7 +7,7 @@ import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from '
 
 import { isFavorite, loadFavorites, Song, toggleFavorite } from '@/lib/favorites';
 
-const STORAGE_KEY = 'playlists_storage';
+const STORAGE_KEY = 'playlists_storage_v2';
 
 type Playlist = {
 	id: string;
