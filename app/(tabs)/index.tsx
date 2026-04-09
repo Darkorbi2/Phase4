@@ -1,160 +1,224 @@
+import { Song, useSongs } from '@/components/useSongs';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { isFavorite, Song as LibSong, loadFavorites, toggleFavorite } from '@/lib/favorites';
-import { usePlayer } from '@/lib/PlayerContext';
-import { Song } from '@/lib/useSongs';
+import { usePlayer } from '@/hooks/usePlayer';
+import { loadFavorites } from '@/lib/favorites';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, FlatList, Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Home() {
 	const scheme = useColorScheme() ?? 'dark';
 	const c = Colors[scheme];
+	const router = useRouter();
 
-	const {
-		songs = [],
-		hasPermission,
-		loading,
-		error,
-		currentSong,
-		isPlaying,
-		requestPermission,
-		pickSongs,
-		playSong,
-		pauseSong,
-		resumeSong,
-		formatDuration
-	} = usePlayer();
+	const { songs, hasPermission, loading, loadSongs, requestPermission } = useSongs();
+	const { setQueue, currentSong, isPlaying, togglePlay } = usePlayer();
 
-	const [favorites, setFavorites] = useState<LibSong[]>([]);
-
-	const loadFavs = useCallback(async () => {
-		const favs = await loadFavorites();
-		setFavorites(favs ?? []);
-	}, []);
+	const [search, setSearch] = useState('');
+	const [favorites, setFavorites] = useState<Song[]>([]);
 
 	useEffect(() => {
-		loadFavs();
-	}, [loadFavs]);
+		if (hasPermission) loadSongs();
+	}, [hasPermission]);
 
-	// Heart animation
-	const scales = useRef<{ [key: string]: Animated.Value }>({}).current;
-	const getScale = (songId: string) => {
-		if (!scales[songId]) scales[songId] = new Animated.Value(1);
-		return scales[songId];
-	};
-
-	const animateHeart = (songId: string) => {
-		const scale = getScale(songId);
-		Animated.sequence([
-			Animated.timing(scale, { toValue: 1.3, duration: 120, useNativeDriver: true }),
-			Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true })
-		]).start();
-	};
-
-	const toLibSong = (song: Song): LibSong => ({
-		id: song.id,
-		title: song.title ?? song.filename ?? 'Unknown',
-		artist: song.artist ?? 'Unknown Artist',
-		duration: song.duration != null ? formatDuration(song.duration) : '0:00',
-		accent: song.accent
-	});
-
-	const handleToggleFavorite = async (song: Song) => {
-		animateHeart(song.id);
-		await toggleFavorite(toLibSong(song));
-		loadFavs();
-	};
-
-	const renderSong = ({ item }: { item: Song }) => (
-		<Pressable onPress={() => playSong(item)} style={[styles.songCard, { backgroundColor: c.card }]}>
-			<Image source={item.artwork ? { uri: item.artwork } : require('@/assets/images/react-logo.png')} style={styles.cover} />
-			<View style={{ flex: 1 }}>
-				<Text style={[styles.songTitle, { color: c.text }]} numberOfLines={1}>
-					{item.title ?? item.filename ?? 'Unknown'}
-				</Text>
-				<Text style={[styles.songInfo, { color: c.muted }]} numberOfLines={1}>
-					{item.artist ?? 'Unknown Artist'}
-					{item.duration != null ? `  •  ${formatDuration(item.duration)}` : ''}
-				</Text>
-			</View>
-
-			<Pressable
-				onPress={(e) => {
-					e.stopPropagation();
-					handleToggleFavorite(item);
-				}}
-				hitSlop={10}
-				style={{ marginRight: 12 }}
-			>
-				<Animated.View style={{ transform: [{ scale: getScale(item.id) }] }}>
-					<Ionicons
-						name={isFavorite(favorites, item.id) ? 'heart' : 'heart-outline'}
-						size={20}
-						color={isFavorite(favorites, item.id) ? '#FF4D4D' : c.muted}
-					/>
-				</Animated.View>
-			</Pressable>
-
-			<Ionicons name={currentSong?.id === item.id ? 'pause-circle' : 'play-circle'} size={28} color={currentSong?.id === item.id ? c.accent : c.muted} />
-		</Pressable>
+	useFocusEffect(
+		useCallback(() => {
+			loadFavorites().then(setFavorites);
+		}, [])
 	);
 
-	return (
-		<LinearGradient colors={['#0A1923', 'rgba(0,0,0,0.53)']} locations={[0.54, 0.87]} style={[styles.screen, { backgroundColor: c.background }]}>
-			<View style={styles.header}>
-				<View>
-					<Text style={[styles.pageTitle, { color: c.text }]}>MY MUSIC</Text>
-					<Text style={[styles.pageSub, { color: c.muted }]}>{songs.length} songs</Text>
-				</View>
+	const openSettings = () => {
+		if (Platform.OS === 'ios') {
+			Linking.openURL('app-settings:');
+		} else {
+			Linking.openSettings();
+		}
+	};
 
-				<View style={styles.headerActions}>
-					{currentSong && (
-						<TouchableOpacity onPress={isPlaying ? pauseSong : resumeSong} style={[styles.iconBtn, { backgroundColor: c.card }]}>
-							<Ionicons name={isPlaying ? 'pause' : 'play'} size={18} color={c.accent} />
-						</TouchableOpacity>
-					)}
+	const filtered = search.trim()
+		? songs.filter(
+				(s) => (s.title ?? s.filename).toLowerCase().includes(search.toLowerCase()) || (s.artist ?? '').toLowerCase().includes(search.toLowerCase())
+			)
+		: songs;
 
-					{/* iOS: add music button | Android: handled automatically */}
-					{Platform.OS === 'ios' && (
-						<TouchableOpacity onPress={pickSongs} style={[styles.iconBtn, { backgroundColor: c.card }]}>
-							<Ionicons name={loading ? 'hourglass-outline' : 'add'} size={20} color={c.accent} />
-						</TouchableOpacity>
-					)}
-				</View>
-			</View>
+	const handlePlaySong = (song: Song, songList: Song[]) => {
+		const idx = songList.findIndex((s) => s.id === song.id);
+		setQueue(songList, idx >= 0 ? idx : 0);
+		router.push('/(tabs)/currentSong');
+	};
 
-			{/* Android permission prompt */}
-			{Platform.OS === 'android' && hasPermission === false && (
-				<View style={styles.permissionBox}>
-					<Text style={[styles.permissionText, { color: c.muted }]}>No access to music library</Text>
-					<TouchableOpacity onPress={requestPermission} style={[styles.permissionBtn, { backgroundColor: c.accent }]}>
+	if (!hasPermission) {
+		return (
+			<LinearGradient colors={['#0A1923', '#050D14']} style={styles.screen}>
+				<View style={styles.permissionState}>
+					<Ionicons name='lock-closed-outline' size={48} color={c.muted} />
+					<Text style={[styles.permissionText, { color: c.text }]}>Media access needed</Text>
+					<Text style={[styles.permissionSub, { color: c.muted }]}>Allow access to your music library to get started</Text>
+					<TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
 						<Text style={styles.permissionBtnText}>Grant Permission</Text>
 					</TouchableOpacity>
+					<TouchableOpacity onPress={openSettings}>
+						<Text style={[styles.settingsLink, { color: c.muted }]}>Already denied? Open Settings</Text>
+					</TouchableOpacity>
 				</View>
-			)}
+			</LinearGradient>
+		);
+	}
 
-			{Platform.OS === 'android' && hasPermission === null && <Text style={[styles.checking, { color: c.muted }]}>Checking permissions...</Text>}
+	return (
+		<LinearGradient colors={['#0A1923', '#050D14']} style={styles.screen}>
+			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
+				{/* Search Bar */}
+				<View style={styles.searchRow}>
+					<View style={[styles.searchBar, { backgroundColor: '#1A2535' }]}>
+						<Ionicons name='search-outline' size={18} color={c.muted} style={{ marginRight: 8 }} />
+						<TextInput
+							style={[styles.searchInput, { color: c.text }]}
+							placeholder='Search songs or artists...'
+							placeholderTextColor={c.muted}
+							value={search}
+							onChangeText={setSearch}
+							returnKeyType='search'
+						/>
+						{search.length > 0 && (
+							<TouchableOpacity onPress={() => setSearch('')}>
+								<Ionicons name='close-circle' size={18} color={c.muted} />
+							</TouchableOpacity>
+						)}
+					</View>
+					<TouchableOpacity style={[styles.moreBtn, { backgroundColor: '#1A2535' }]}>
+						<Ionicons name='ellipsis-horizontal' size={18} color={c.text} />
+					</TouchableOpacity>
+				</View>
 
-			{error && <Text style={styles.error}>{error}</Text>}
+				{/* Latest Favourites */}
+				{search.trim() === '' && favorites.length > 0 && (
+					<>
+						<View style={styles.sectionHeader}>
+							<View style={styles.sectionLabelRow}>
+								<View style={styles.accentLine} />
+								<Text style={[styles.sectionLabel, { color: c.text }]}>LATEST FAVOURITES</Text>
+							</View>
+							<Text style={[styles.songCountText, { color: c.muted }]}>{favorites.length} songs</Text>
+						</View>
 
-			{/* Song list */}
-			{songs.length === 0 && !loading ? (
-				<View style={styles.empty}>
-					<Ionicons name='musical-notes-outline' size={48} color={c.muted} />
-					<Text style={[styles.emptyText, { color: c.muted }]}>
-						{Platform.OS === 'ios' ? 'Tap + to add music from your Files' : 'No songs found'}
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.favRow}>
+							{favorites.map((song) => {
+								const isCurrentSong = currentSong?.id === song.id;
+								return (
+									<TouchableOpacity key={song.id} style={styles.favCard} onPress={() => handlePlaySong(song, favorites)} activeOpacity={0.8}>
+										<LinearGradient colors={[song.accent ?? '#4FC3F7', '#0A1923']} style={styles.favArt}>
+											{isCurrentSong && isPlaying ? (
+												<Ionicons name='pause' size={20} color='#fff' />
+											) : (
+												<Ionicons name='musical-note' size={20} color='rgba(255,255,255,0.7)' />
+											)}
+										</LinearGradient>
+										<Text style={[styles.favTitle, { color: isCurrentSong ? '#4FC3F7' : c.text }]} numberOfLines={2}>
+											{song.title ?? song.filename}
+										</Text>
+										<Text style={[styles.favArtist, { color: c.muted }]} numberOfLines={1}>
+											{song.artist ?? 'Unknown'}
+										</Text>
+									</TouchableOpacity>
+								);
+							})}
+						</ScrollView>
+					</>
+				)}
+
+				{/* All Songs */}
+				<View style={styles.sectionHeader}>
+					<View style={styles.sectionLabelRow}>
+						<View style={styles.accentLine} />
+						<Text style={[styles.sectionLabel, { color: c.text }]}>{search.trim() ? 'RESULTS' : 'ALL SONGS'}</Text>
+					</View>
+					<Text style={[styles.songCountText, { color: c.muted }]}>
+						{filtered.length} {filtered.length === 1 ? 'song' : 'songs'}
 					</Text>
 				</View>
-			) : (
-				<FlatList
-					data={songs}
-					keyExtractor={(item) => item.id}
-					renderItem={renderSong}
-					contentContainerStyle={styles.list}
-					showsVerticalScrollIndicator={false}
-				/>
+
+				{loading ? (
+					<ActivityIndicator color='#4FC3F7' style={{ marginTop: 40 }} />
+				) : filtered.length === 0 ? (
+					<View style={styles.emptySearch}>
+						<Ionicons name='search-outline' size={40} color={c.muted} />
+						<Text style={[styles.emptyText, { color: c.muted }]}>No songs found for "{search}"</Text>
+					</View>
+				) : (
+					filtered.map((song) => {
+						const isCurrentSong = currentSong?.id === song.id;
+						return (
+							<TouchableOpacity
+								key={song.id}
+								style={[styles.songRow, isCurrentSong && { backgroundColor: 'rgba(79,195,247,0.08)' }]}
+								onPress={() => handlePlaySong(song, filtered)}
+								activeOpacity={0.7}
+							>
+								<View style={[styles.songArt, { backgroundColor: song.accent ?? '#1A2535' }]}>
+									{isCurrentSong && isPlaying ? (
+										<Ionicons name='pause' size={16} color='#fff' />
+									) : (
+										<Ionicons name='musical-note' size={16} color='rgba(255,255,255,0.6)' />
+									)}
+								</View>
+
+								<View style={styles.songInfo}>
+									<Text style={[styles.songTitle, { color: isCurrentSong ? '#4FC3F7' : c.text }]} numberOfLines={1}>
+										{song.title ?? song.filename}
+									</Text>
+									<Text style={[styles.songArtist, { color: c.muted }]} numberOfLines={1}>
+										{song.artist ?? 'Unknown Artist'}
+									</Text>
+								</View>
+
+								{song.duration != null && (
+									<Text style={[styles.songDuration, { color: c.muted }]}>
+										{Math.floor(song.duration / 60)}:{String(Math.floor(song.duration % 60)).padStart(2, '0')}
+									</Text>
+								)}
+
+								<Ionicons name='ellipsis-vertical' size={16} color={c.muted} />
+							</TouchableOpacity>
+						);
+					})
+				)}
+
+				<View style={styles.bottomPad} />
+			</ScrollView>
+
+			{/* Mini Player */}
+			{currentSong && (
+				<TouchableOpacity
+					style={[styles.miniPlayer, { backgroundColor: '#1A2535' }]}
+					onPress={() => router.push('/(tabs)/currentSong')}
+					activeOpacity={0.9}
+				>
+					<View style={[styles.miniArt, { backgroundColor: currentSong.accent ?? '#4FC3F7' }]}>
+						<Ionicons name='musical-note' size={16} color='rgba(255,255,255,0.8)' />
+					</View>
+					<View style={styles.miniInfo}>
+						<Text style={[styles.miniTitle, { color: c.text }]} numberOfLines={1}>
+							{currentSong.title ?? currentSong.filename}
+						</Text>
+						<Text style={[styles.miniArtist, { color: c.muted }]} numberOfLines={1}>
+							{currentSong.artist ?? 'Unknown Artist'}
+						</Text>
+					</View>
+					<TouchableOpacity
+						onPress={(e) => {
+							e.stopPropagation();
+							togglePlay();
+						}}
+						style={styles.miniPlay}
+					>
+						<Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color='#4FC3F7' />
+					</TouchableOpacity>
+				</TouchableOpacity>
 			)}
 		</LinearGradient>
 	);
@@ -162,43 +226,40 @@ export default function Home() {
 
 const styles = StyleSheet.create({
 	screen: { flex: 1 },
-	header: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingHorizontal: 20,
-		paddingTop: 60,
-		paddingBottom: 16
-	},
-	pageTitle: { fontSize: 28, fontWeight: '700', letterSpacing: 2 },
-	pageSub: { fontSize: 13, marginTop: 2 },
-	headerActions: { flexDirection: 'row', gap: 10 },
-	iconBtn: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	list: { paddingHorizontal: 20, paddingBottom: 120 },
-	songCard: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: 12,
-		marginBottom: 10,
-		borderRadius: 14,
-		borderWidth: 0.75,
-		borderColor: '#535151'
-	},
-	cover: { width: 46, height: 46, borderRadius: 8, marginRight: 12 },
+	content: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 16 },
+	permissionState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, paddingHorizontal: 32 },
+	permissionText: { fontSize: 18, fontWeight: '700' },
+	permissionSub: { fontSize: 13, textAlign: 'center', lineHeight: 20 },
+	permissionBtn: { backgroundColor: '#4FC3F7', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 24, marginTop: 8 },
+	permissionBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+	settingsLink: { fontSize: 13, marginTop: 4, textDecorationLine: 'underline' },
+	searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 28 },
+	searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10 },
+	searchInput: { flex: 1, fontSize: 15, padding: 0 },
+	moreBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+	sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+	sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+	accentLine: { width: 18, height: 2, backgroundColor: '#4FC3F7', borderRadius: 1 },
+	sectionLabel: { fontSize: 13, fontWeight: '700', letterSpacing: 1.5 },
+	songCountText: { fontSize: 12 },
+	favRow: { marginBottom: 28 },
+	favCard: { width: 120, marginRight: 12 },
+	favArt: { width: 120, height: 120, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+	favTitle: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
+	favArtist: { fontSize: 11, marginTop: 2 },
+	emptySearch: { alignItems: 'center', paddingTop: 48, gap: 12 },
+	emptyText: { fontSize: 14 },
+	songRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 8, borderRadius: 10, marginBottom: 2 },
+	songArt: { width: 44, height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+	songInfo: { flex: 1 },
 	songTitle: { fontSize: 14, fontWeight: '600' },
-	songInfo: { fontSize: 12, marginTop: 2 },
-	permissionBox: { alignItems: 'center', marginTop: 40, gap: 12 },
-	permissionText: { fontSize: 14 },
-	permissionBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
-	permissionBtnText: { color: '#fff', fontWeight: '700' },
-	checking: { textAlign: 'center', marginTop: 40 },
-	error: { color: '#FF4D4D', textAlign: 'center', marginHorizontal: 20, marginTop: 8 },
-	empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-	emptyText: { fontSize: 14, textAlign: 'center', paddingHorizontal: 40 }
+	songArtist: { fontSize: 12, marginTop: 2 },
+	songDuration: { fontSize: 12 },
+	miniPlayer: { position: 'absolute', bottom: 90, left: 16, right: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 },
+	miniArt: { width: 40, height: 40, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+	miniInfo: { flex: 1 },
+	miniTitle: { fontSize: 14, fontWeight: '600' },
+	miniArtist: { fontSize: 12, marginTop: 1 },
+	miniPlay: { padding: 4 },
+	bottomPad: { height: 160 }
 });
