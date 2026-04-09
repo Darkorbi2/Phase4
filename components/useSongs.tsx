@@ -1,6 +1,6 @@
 import { Audio } from 'expo-av';
 import * as MediaLibrary from 'expo-media-library';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 export type Song = {
@@ -119,7 +119,7 @@ export function useSongs() {
 		}
 	};
 
-	const loadSongs = async () => {
+	const loadSongs = useCallback(async () => {
 		if (!hasPermission) return;
 
 		try {
@@ -162,7 +162,7 @@ export function useSongs() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [hasPermission]);
 
 	// Return
 	return {
